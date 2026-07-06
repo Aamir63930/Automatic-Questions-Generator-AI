@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model College {
+  id         String   @id @default(uuid())
+  name       String
+  domain     String   @unique
+  logoUrl    String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  users      User[]
+  tasks      Task[]
+  materials  Material[]
+  papers     Paper[]
+  classes    ClassSection[]
+}
+
+model ClassSection {
+  id         String   @id @default(uuid())
+  collegeId  String
+  name       String
+  section    String
+  semester   Int
+  branch     String
+  year       Int
+  uniqueCode String   @unique
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  college  College @relation(fields: [collegeId], references: [id])
+  students User[]  @relation("StudentClass")
+  tasks    Task[]  @relation("TaskClass")
+  materials Material[]
+}
+
+model User {
+  id             String   @id @default(uuid())
+  collegeId      String
+  classSectionId String?
+  name           String
+  email          String   @unique
+  role           Role
+  azureOid       String?  @unique
+  avatarUrl      String?
+  department     String?
+  rollNumber     String?
+  subjects       String[] @default([])
+  isActive       Boolean  @default(true)
+  lastLogin      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  college       College       @relation(fields: [collegeId], references: [id])
+  classSection  ClassSection? @relation("StudentClass", fields: [classSectionId], references: [id])
+  tasks         Task[]        @relation("TaskCreator")
+  submissions   Submission[]
+  materials     Material[]
+  complaints    Complaint[]   @relation("ComplaintRaiser")
+  notifications Notification[]
+}
+
+enum Role {
+  admin
+  hod
+  teacher
+  student
+}
+
+model Material {
+  id          String         @id @default(uuid())
+  collegeId   String
+  classSectionId String?
+  uploadedBy  String
+  title       String
+  fileName    String
+  fileUrl     String
+  fileType    MaterialType
+  fileSizeKb  Int?
+  status      MaterialStatus @default(ready)
+  isPyq       Boolean        @default(false)
+  subject     String?
+  unit        String?
+  year        Int?
+  examType    String?
+  createdAt   DateTime       @default(now())
+
+  college  College @relation(fields: [collegeId], references: [id])
+  uploader User    @relation(fields: [uploadedBy], references: [id])
+  classSection ClassSection? @relation(fields: [classSectionId], references: [id])
+}
+
+enum MaterialType {
+  notes
+  pyq
+  textbook
+  other
+}
+
+enum MaterialStatus {
+  uploaded
+  processing
+  ready
+  failed
+}
+
+model Task {
+  id             String     @id @default(uuid())
+  collegeId      String
+  classSectionId String?
+  createdBy      String
+  title          String
+  description    String?
+  taskType       TaskType
+  subjectName    String?
+  deadline       DateTime?
+  extendedDeadline DateTime?
+  maxMarks       Int        @default(10)
+  instructions   String?
+  attachmentUrl  String?
+  allowLate      Boolean    @default(false)
+  latePenalty    Int        @default(0)
+  status         TaskStatus @default(active)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  college      College       @relation(fields: [collegeId], references: [id])
+  creator      User          @relation("TaskCreator", fields: [createdBy], references: [id])
+  classSection ClassSection? @relation("TaskClass", fields: [classSectionId], references: [id])
+  submissions  Submission[]
+}
+
+enum TaskType {
+  assignment
+  class_test
+  quiz
+  project
+}
+
+enum TaskStatus {
+  active
+  closed
+  draft
+}
+
+model Submission {
+  id           String       @id @default(uuid())
+  taskId       String
+  studentId    String
+  fileUrl      String?
+  fileName     String?
+  textAnswer   String?
+  status       SubmitStatus @default(submitted)
+  marksAwarded Int?
+  feedback     String?
+  gradedBy     String?
+  gradedAt     DateTime?
+  submittedAt  DateTime     @default(now())
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student User @relation(fields: [studentId], references: [id])
+
+  @@unique([taskId, studentId])
+}
+
+enum SubmitStatus {
+  submitted
+  late
+  missing
+  graded
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  type      String   @default("system")
+  refId     String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Complaint {
+  id         String          @id @default(uuid())
+  raisedBy   String
+  subject    String
+  category   String?
+  status     ComplaintStatus @default(open)
+  priority   String          @default("normal")
+  resolvedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  raiser   User               @relation("ComplaintRaiser", fields: [raisedBy], references: [id])
+  messages ComplaintMessage[]
+}
+
+enum ComplaintStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+model ComplaintMessage {
+  id          String   @id @default(uuid())
+  complaintId String
+  sentBy      String
+  senderName  String   @default("User")
+  senderRole  String   @default("student")
+  message     String
+  createdAt   DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+}
+
+model Paper {
+  id         String   @id @default(uuid())
+  collegeId  String
+  createdBy  String
+  title      String
+  subject    String
+  examType   String
+  totalMarks Int
+  duration   Int      @default(180)
+  pdfUrl     String?
+  status     String   @default("draft")
+  questions  Json     @default("[]")
+  createdAt  DateTime @default(now())
+
+  college College @relation(fields: [collegeId], references: [id])
+}
