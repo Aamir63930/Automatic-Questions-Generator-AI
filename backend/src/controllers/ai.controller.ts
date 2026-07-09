@@ -167,20 +167,23 @@ Return ONLY JSON:
 
 export const aiChat = async (req: Request, res: Response) => {
   try {
-    const { message, subject, history } = req.body
+    const { message, subject, history, image } = req.body
+    const userMessage = image
+      ? (message || 'Please solve this problem from the image I shared') + '\n[Student has attached an image of their problem - provide detailed step by step solution]'
+      : message
     if (!GROQ_KEY || GROQ_KEY === 'your-groq-api-key-here') {
       return error(res, 'GROQ_API_KEY not set', 500)
     }
     const msgs = [
       ...(history || []).slice(-6).map((h: any) => ({ role: h.role, content: h.content })),
-      { role: 'user', content: message }
+      { role: 'user', content: userMessage }
     ]
     const res2 = await fetch(GROQ_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
       body: JSON.stringify({
         model: MODEL,
-        messages: [{ role: 'system', content: 'You are an expert academic tutor for ' + (subject || 'all subjects') + ' at K.R Mangalam University. Be clear and educational.' }, ...msgs],
+        messages: [{ role: 'system', content: 'You are HAYAT, an expert academic tutor for ' + (subject || 'all subjects') + ' at K.R Mangalam University. ' + (image ? 'The student has shared an image of their handwritten problem. Analyze it and provide detailed step-by-step solution with explanation.' : 'Be clear, concise and use examples.') }, ...msgs],
         max_tokens: 1024, temperature: 0.7,
       })
     })
