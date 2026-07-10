@@ -7,7 +7,7 @@ with open("../frontend/app/(student)/student/notifications/page.tsx", "w", encod
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Notif = { id: string; title: string; body: string; type: string; isRead: boolean; createdAt: string; refId?: string }
 
@@ -117,7 +117,7 @@ with open("../frontend/app/(student)/student/materials/page.tsx", "w", encoding=
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Material = {
   id: string; title: string; fileName: string; fileUrl: string

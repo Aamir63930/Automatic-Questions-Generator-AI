@@ -11,7 +11,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import StudentSidebar from '@/components/student/StudentSidebar'
 import StudentNavbar from '@/components/student/StudentNavbar'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -239,7 +239,7 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 const SUBJECTS = [
   'Data Structures and Algorithms', 'Operating Systems', 'Computer Networks',

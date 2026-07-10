@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type ClassSection = {
   id: string; name: string; section: string; branch: string
@@ -361,7 +361,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()

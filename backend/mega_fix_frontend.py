@@ -9,7 +9,7 @@ with open("../frontend/app/(dashboard)/teacher/notifications/page.tsx", "w", enc
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Notif = { id: string; title: string; body: string; type: string; isRead: boolean; createdAt: string }
 type ClassSection = { id: string; name: string; section: string; branch: string; _count: { students: number } }
@@ -281,7 +281,7 @@ with open("../frontend/app/(student)/student/materials/page.tsx", "w", encoding=
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Material = {
   id: string
@@ -508,7 +508,7 @@ with open("../frontend/app/(dashboard)/teacher/materials/page.tsx", "w", encodin
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Material = {
   id: string
@@ -757,7 +757,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Task = { id: string; title: string; subjectName?: string | null; taskType: string; deadline?: string | null; maxMarks: number }
 type Material = { id: string; title: string; subject?: string | null; unit?: string | null; year?: number | null; isPyq: boolean; createdAt: string }

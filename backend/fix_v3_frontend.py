@@ -7,7 +7,7 @@ with open("../frontend/app/(student)/student/results/page.tsx", "w", encoding="u
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Submission = {
   id: string; taskId: string; status: string

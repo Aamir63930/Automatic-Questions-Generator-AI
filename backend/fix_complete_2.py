@@ -9,7 +9,7 @@ with open("../frontend/app/(student)/student/materials/page.tsx", "w", encoding=
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Material = {
   id: string; title: string; fileName: string; fileUrl: string
@@ -209,7 +209,7 @@ with open("../frontend/app/(student)/student/assignments/page.tsx", "w", encodin
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Task = {
   id: string; title: string; subjectName?: string | null; taskType: string
@@ -451,7 +451,7 @@ with open("../frontend/app/(dashboard)/teacher/results/page.tsx", "w", encoding=
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Task = { id: string; title: string; subjectName?: string | null; maxMarks: number; taskType: string; classSection?: { name: string; section: string } | null; _count: { submissions: number } }
 type Sub = {

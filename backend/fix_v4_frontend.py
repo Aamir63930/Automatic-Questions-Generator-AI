@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 const ALL_SUBJECTS = [
   'Data Structures and Algorithms', 'Operating Systems', 'Computer Networks',
@@ -420,7 +420,7 @@ with open("../frontend/app/(dashboard)/teacher/materials/page.tsx", "w", encodin
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Material = {
   id: string; title: string; fileName: string; fileUrl: string; fileType: string

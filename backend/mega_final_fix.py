@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type ClassSection = {
   id: string; name: string; section: string; branch: string
@@ -268,7 +268,7 @@ with open("../frontend/app/(dashboard)/teacher/results/page.tsx", "w", encoding=
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 export default function TeacherResultsPage() {
   const { data: session } = useSession()
@@ -888,9 +888,9 @@ if "customSubjects" not in gen_content:
               </button>
             )}
           </div>
-          {customSubjects.length > 0 && (
+          {customSubjects?.length ?? 0) > 0 && (
             <div className="mb-4 flex gap-2 flex-wrap">
-              {customSubjects.map(s => (
+              {(customSubjects ?? []).map(s => (
                 <span key={s} className="flex items-center gap-1.5 text-xs bg-green-500/10 text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full">
                   {s}
                   <button onClick={() => removeCustomSubject(s)} className="hover:text-red-400 ml-0.5">✕</button>

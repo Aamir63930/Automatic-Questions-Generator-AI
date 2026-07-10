@@ -7,7 +7,7 @@ with open("../frontend/app/(dashboard)/teacher/results/page.tsx", "w", encoding=
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Student = { id: string; name: string; email: string; rollNumber?: string | null; totalObtained: number; totalMax: number; avgPct: number | null; grade: string; tasks: any[] }
 type ClassGroup = { classId: string; className: string; branch: string; students: Student[]; studentCount: number }

@@ -7,7 +7,7 @@ with open("../frontend/app/(student)/student/chatbot/page.tsx", "w", encoding="u
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Msg = { id: string; role: 'user'|'assistant'; text: string; time: string }
 
@@ -243,7 +243,7 @@ with open("../frontend/app/(dashboard)/teacher/classes/page.tsx", "w", encoding=
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Student = { id: string; name: string; email: string; rollNumber?: string | null; avatarUrl?: string | null }
 type ClassSection = {

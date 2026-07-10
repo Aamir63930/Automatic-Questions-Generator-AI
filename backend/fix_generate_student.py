@@ -10,7 +10,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 const ALL_SUBJECTS = [
   'Data Structures and Algorithms','Operating Systems','Computer Networks',
@@ -515,7 +515,7 @@ with open("../frontend/app/(dashboard)/teacher/notifications/page.tsx", "w", enc
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type ClassSection = { id: string; name: string; section: string; branch: string; _count: { students: number } }
 type Task = { id: string; title: string; classSectionId?: string | null }
@@ -773,7 +773,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type ClassSection = { id: string; name: string; section: string; branch: string; semester: number; year: number; uniqueCode: string; _count: { students: number } }
 

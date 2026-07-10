@@ -31,7 +31,7 @@ type ClassSection = {
   _count: { students: number }
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 const SUBJECTS = [
   'Data Structures and Algorithms', 'Operating Systems', 'Computer Networks',
@@ -504,7 +504,7 @@ type Complaint = {
   messages: Message[]
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 export default function StudentComplaintsPage() {
   const { data: session } = useSession()
@@ -721,7 +721,7 @@ type Complaint = {
   messages: Message[]
 }
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 export default function TeacherComplaintsPage() {
   const { data: session } = useSession()
@@ -902,7 +902,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type ClassSection = {
   id: string

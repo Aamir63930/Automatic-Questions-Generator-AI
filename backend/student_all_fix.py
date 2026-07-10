@@ -65,7 +65,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type ClassSection = {
   id: string
@@ -337,7 +337,7 @@ with open("../frontend/app/(student)/student/assignments/page.tsx", "w", encodin
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Task = {
   id: string
@@ -718,7 +718,7 @@ with open("../frontend/app/(student)/student/chatbot/page.tsx", "w", encoding="u
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Message = { id: number; role: 'user' | 'assistant'; content: string; time: string }
 
@@ -952,7 +952,7 @@ with open("../frontend/app/(student)/student/results/page.tsx", "w", encoding="u
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
+const API = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
 
 type Submission = {
   id: string
