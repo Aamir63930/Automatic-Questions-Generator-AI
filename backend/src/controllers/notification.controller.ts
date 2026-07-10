@@ -99,3 +99,13 @@ export const studentAlertTeacher = async (req: Request, res: Response) => {
     return success(res, null, 'Alert sent to teachers!')
   } catch (err: any) { return error(res, err.message, 500) }
 }
+
+export const getUnreadCount = async (req: Request, res: Response) => {
+  try {
+    const { userId } = (req as any).user
+    const count = await prisma.notification.count({
+      where: { userId, isRead: false }
+    })
+    return success(res, { count })
+  } catch (err) { return error(res, 'Failed', 500) }
+}

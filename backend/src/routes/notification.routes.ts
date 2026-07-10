@@ -1,10 +1,11 @@
 import { Router } from 'express'
-import { getNotifications, markRead, markAllRead, deleteNotification, sendBulkNotification, studentAlertTeacher } from '../controllers/notification.controller'
+import { getNotifications, markRead, markAllRead, deleteNotification, sendBulkNotification, studentAlertTeacher, getUnreadCount } from '../controllers/notification.controller'
 import { authenticate, authorize } from '../middleware/auth.middleware'
 import prisma from '../config/db'
 
 const router = Router()
 router.get('/', authenticate, getNotifications)
+router.get('/unread-count', authenticate, getUnreadCount)
 router.patch('/read-all', authenticate, markAllRead)
 router.patch('/:id/read', authenticate, markRead)
 router.delete('/:id', authenticate, deleteNotification)

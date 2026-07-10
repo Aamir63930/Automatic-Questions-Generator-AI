@@ -168,9 +168,13 @@ Return ONLY JSON:
 export const aiChat = async (req: Request, res: Response) => {
   try {
     const { message, subject, history, image } = req.body
+
+    // Build message - with or without image
     const userMessage = image
-      ? (message || 'Please solve this problem from the image I shared') + '\n[Student has attached an image of their problem - provide detailed step by step solution]'
+      ? (message || 'Please analyze and solve the problem shown in this image') + '\n\n[Note: Student has attached an image. Describe what you think the image contains and provide a detailed solution/explanation based on the subject context: ' + (subject || 'General') + ']'
       : message
+
+    if (!userMessage) return error(res, 'Message required', 400)
     if (!GROQ_KEY || GROQ_KEY === 'your-groq-api-key-here') {
       return error(res, 'GROQ_API_KEY not set', 500)
     }
@@ -184,7 +188,7 @@ export const aiChat = async (req: Request, res: Response) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [{ role: 'system', content: 'You are HAYAT, an expert academic tutor for ' + (subject || 'all subjects') + ' at K.R Mangalam University. ' + (image ? 'The student has shared an image of their handwritten problem. Analyze it and provide detailed step-by-step solution with explanation.' : 'Be clear, concise and use examples.') }, ...msgs],
-        max_tokens: 1024, temperature: 0.7,
+        max_tokens: 2048, temperature: 0.7,
       })
     })
     const d = await res2.json() as { choices: { message: { content: string } }[] }
