@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const task_controller_1 = require("../controllers/task.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const upload_middleware_1 = require("../middleware/upload.middleware");
+const router = (0, express_1.Router)();
+router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), upload_middleware_1.upload.single('attachment'), task_controller_1.createTask);
+router.post('/bulk', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), task_controller_1.createBulkTasks);
+router.get('/', auth_middleware_1.authenticate, task_controller_1.getTasks);
+router.get('/:id', auth_middleware_1.authenticate, task_controller_1.getTask);
+router.patch('/:id/status', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), task_controller_1.updateTaskStatus);
+router.patch('/:id/extend-deadline', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), task_controller_1.extendDeadline);
+router.delete('/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), task_controller_1.deleteTask);
+exports.default = router;

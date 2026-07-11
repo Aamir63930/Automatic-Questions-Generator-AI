@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_controller_1 = require("../controllers/auth.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
+router.post('/azure', auth_controller_1.azureLogin);
+router.get('/me', auth_middleware_1.authenticate, auth_controller_1.getMe);
+router.get('/users', auth_middleware_1.authenticate, auth_controller_1.getUsers);
+router.patch('/subjects', auth_middleware_1.authenticate, auth_controller_1.updateSubjects);
+router.get('/classes', auth_middleware_1.authenticate, auth_controller_1.getClasses);
+router.post('/classes', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), auth_controller_1.createClass);
+router.delete('/classes/:id', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), auth_controller_1.deleteClass);
+router.post('/join-class', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('student'), auth_controller_1.joinClassByCode);
+router.patch('/select-class', auth_middleware_1.authenticate, auth_controller_1.selectClass);
+router.patch('/assign-class', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), auth_controller_1.assignClass);
+exports.default = router;

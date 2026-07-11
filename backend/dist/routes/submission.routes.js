@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const submission_controller_1 = require("../controllers/submission.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const upload_middleware_1 = require("../middleware/upload.middleware");
+const router = (0, express_1.Router)();
+router.post('/', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('student'), upload_middleware_1.upload.single('file'), submission_controller_1.createSubmission);
+router.get('/', auth_middleware_1.authenticate, submission_controller_1.getSubmissions);
+router.get('/pending-summary', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), submission_controller_1.getPendingSummary);
+router.get('/results-summary', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), submission_controller_1.getResultsSummary);
+router.get('/task/:taskId/status', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), submission_controller_1.getTaskSubmissionStatus);
+router.patch('/:id/grade', auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)('teacher', 'admin'), submission_controller_1.gradeSubmission);
+exports.default = router;

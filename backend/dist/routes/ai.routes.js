@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ai_controller_1 = require("../controllers/ai.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
+router.get('/material-units', auth_middleware_1.authenticate, ai_controller_1.getMaterialUnits);
+router.post('/generate-questions', auth_middleware_1.authenticate, ai_controller_1.generateQuestions);
+router.post('/chat', auth_middleware_1.authenticate, ai_controller_1.aiChat);
+router.post('/check-answer', auth_middleware_1.authenticate, ai_controller_1.checkAnswer);
+exports.default = router;
