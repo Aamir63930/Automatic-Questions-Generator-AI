@@ -2,32 +2,26 @@ import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 
-// Ensure uploads folder exists
-const uploadDir = process.env.UPLOAD_DIR || 'uploads'
+const uploadDir = path.join(process.cwd(), 'uploads')
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const folder = path.join(uploadDir, (req as any).user?.collegeId || 'general')
-    if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true })
-    cb(null, folder)
+  destination: (req: any, file, cb) => {
+    const dir = path.join(uploadDir, req.user?.collegeId || 'general')
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    cb(null, dir)
   },
   filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    const ext = path.extname(file.originalname)
-    cb(null, unique + ext)
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(file.originalname))
   }
 })
 
-const fileFilter = (req: any, file: any, cb: any) => {
-  const allowed = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.zip']
-  const ext = path.extname(file.originalname).toLowerCase()
-  if (allowed.includes(ext)) cb(null, true)
-  else cb(new Error('File type not allowed'), false)
-}
-
 export const upload = multer({
   storage,
-  fileFilter,
-  limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760') }
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf','.doc','.docx','.ppt','.pptx','.jpg','.jpeg','.png','.txt']
+    if (allowed.includes(path.extname(file.originalname).toLowerCase())) cb(null, true)
+    else cb(new Error('File type not allowed'))
+  }
 })
