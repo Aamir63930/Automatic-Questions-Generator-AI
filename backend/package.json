@@ -14,7 +14,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+
+  "engines": {
+    "node": "22.x"
+  },
+
   "type": "commonjs",
+
   "dependencies": {
     "@prisma/client": "^6.10.1",
     "@types/node": "^26.1.1",
