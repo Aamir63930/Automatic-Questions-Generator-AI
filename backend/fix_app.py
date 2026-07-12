@@ -1,4 +1,5 @@
-import express from 'express'
+with open("src/app.ts", "w", encoding="utf-8") as f:
+    f.write("""import express from 'express'
 import cors from 'cors'
 import path from 'path'
 
@@ -44,3 +45,5 @@ app.listen(PORT, () => {
 })
 
 export default app
+""")
+print("app.ts fixed!")
