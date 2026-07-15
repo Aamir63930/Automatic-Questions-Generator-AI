@@ -1,4 +1,5 @@
-import { Request, Response } from 'express'
+with open("src/controllers/ai.controller.ts", "w", encoding="utf-8") as f:
+    f.write(r"""import { Request, Response } from 'express'
 import { success, error } from '../utils/response'
 import prisma from '../config/db'
 
@@ -147,3 +148,5 @@ export const checkAnswer = async (req: Request, res: Response) => {
     return success(res, JSON.parse(match ? match[0] : raw.replace(/```json|```/g, '').trim()))
   } catch (err: any) { return error(res, err.message, 500) }
 }
+""")
+print("AI controller written successfully!")
