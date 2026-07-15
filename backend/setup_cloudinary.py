@@ -1,4 +1,55 @@
-import { Request, Response } from 'express'
+import os
+
+# Install cloudinary
+os.system("npm install cloudinary")
+
+with open("src/config/cloudinary.ts", "w", encoding="utf-8") as f:
+    f.write("""import { v2 as cloudinary } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
+  api_key: process.env.CLOUDINARY_API_KEY || '',
+  api_secret: process.env.CLOUDINARY_API_SECRET || '',
+})
+
+export default cloudinary
+""")
+print("Cloudinary config done!")
+
+with open("src/middleware/upload.middleware.ts", "w", encoding="utf-8") as f:
+    f.write("""import multer from 'multer'
+import path from 'path'
+import fs from 'fs'
+
+// Always use disk storage - we'll upload to Cloudinary manually
+const uploadDir = path.join(process.cwd(), 'uploads')
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+
+const storage = multer.diskStorage({
+  destination: (req: any, file, cb) => {
+    const dir = path.join(uploadDir, req.user?.collegeId || 'general')
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    cb(null, dir)
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(file.originalname))
+  }
+})
+
+export const upload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf','.doc','.docx','.ppt','.pptx','.jpg','.jpeg','.png','.txt']
+    if (allowed.includes(path.extname(file.originalname).toLowerCase())) cb(null, true)
+    else cb(new Error('File type not allowed'))
+  }
+})
+""")
+print("Upload middleware done!")
+
+with open("src/controllers/material.controller.ts", "w", encoding="utf-8") as f:
+    f.write("""import { Request, Response } from 'express'
 import prisma from '../config/db'
 import { success, error } from '../utils/response'
 import path from 'path'
@@ -48,7 +99,7 @@ export const uploadMaterial = async (req: Request, res: Response) => {
       data: {
         collegeId,
         uploadedBy: userId,
-        title: title || file.originalname.replace(/\.[^.]+$/, ''),
+        title: title || file.originalname.replace(/\\.[^.]+$/, ''),
         fileName: file.originalname,
         fileUrl,
         fileType: (isPyq === 'true' ? 'pyq' : fileType || 'notes') as any,
@@ -181,3 +232,16 @@ export const deleteMaterial = async (req: Request, res: Response) => {
     return success(res, null, 'Deleted')
   } catch (err) { return error(res, 'Failed', 500) }
 }
+""")
+print("Material controller done!")
+
+print("""
+=== DONE ===
+Now:
+1. Add to Render Environment:
+   CLOUDINARY_CLOUD_NAME = your_name
+   CLOUDINARY_API_KEY = your_key
+   CLOUDINARY_API_SECRET = your_secret
+
+2. Push to GitHub
+""")
