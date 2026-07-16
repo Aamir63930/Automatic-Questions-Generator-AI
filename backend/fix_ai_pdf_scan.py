@@ -1,4 +1,11 @@
-import { Request, Response } from 'express'
+import os
+
+# Install pdf-parse for text extraction
+os.system("npm install pdf-parse axios")
+
+# Update AI controller to fetch and read PDF content
+with open("src/controllers/ai.controller.ts", "w", encoding="utf-8") as f:
+    f.write("""import { Request, Response } from 'express'
 import { success, error } from '../utils/response'
 import prisma from '../config/db'
 import axios from 'axios'
@@ -140,7 +147,7 @@ export const generateQuestions = async (req: Request, res: Response) => {
       if (ext === '.pdf' || mat.fileUrl?.includes('.pdf') || mat.fileUrl?.includes('cloudinary')) {
         const text = await extractPdfText(mat.fileUrl)
         if (text.trim()) {
-          materialContent += '\n--- ' + mat.unit + ': ' + mat.title + ' ---\n' + text.slice(0, 1500) + '\n'
+          materialContent += '\\n--- ' + mat.unit + ': ' + mat.title + ' ---\\n' + text.slice(0, 1500) + '\\n'
           console.log('Extracted', text.length, 'chars from', mat.title)
         }
       }
@@ -162,16 +169,16 @@ export const generateQuestions = async (req: Request, res: Response) => {
         if (ext === '.pdf' || pq.fileUrl?.includes('cloudinary')) {
           const text = await extractPdfText(pq.fileUrl)
           if (text.trim()) {
-            pyqContent += '\nPYQ ' + pq.year + ' - ' + pq.title + ':\n' + text.slice(0, 1000) + '\n'
+            pyqContent += '\\nPYQ ' + pq.year + ' - ' + pq.title + ':\\n' + text.slice(0, 1000) + '\\n'
           }
         }
       }
     }
 
-    const topicList = selectedTopics.map((t: string, i: number) => (i + 1) + '. ' + t).join('\n')
+    const topicList = selectedTopics.map((t: string, i: number) => (i + 1) + '. ' + t).join('\\n')
     const sectionsDesc = (sections || []).map((s: any) =>
       'Section ' + s.name + ': ' + s.total + ' questions of ' + s.marks + ' marks each'
-    ).join('\n')
+    ).join('\\n')
 
     const hasContent = materialContent.trim().length > 0
 
@@ -179,19 +186,19 @@ export const generateQuestions = async (req: Request, res: Response) => {
       ? 'You are an expert exam paper setter. Generate questions STRICTLY from the provided study material content. Every question must be based on the actual content given below.'
       : 'You are a university exam paper setter. Generate questions ONLY from these topics: ' + selectedTopics.join(', ') + '. No other topics allowed.'
 
-    const userPrompt = 'Create exam questions for: ' + subject + '\n' +
-      'Topics/Units: ' + topicList + '\n' +
-      'Difficulty: ' + (difficulty || 'mixed') + '\n\n' +
+    const userPrompt = 'Create exam questions for: ' + subject + '\\n' +
+      'Topics/Units: ' + topicList + '\\n' +
+      'Difficulty: ' + (difficulty || 'mixed') + '\\n\\n' +
       (hasContent
-        ? 'STUDY MATERIAL CONTENT (generate questions FROM THIS CONTENT ONLY):\n' + materialContent + '\n'
+        ? 'STUDY MATERIAL CONTENT (generate questions FROM THIS CONTENT ONLY):\\n' + materialContent + '\\n'
         : '') +
-      (pyqContent ? 'PREVIOUS YEAR PAPER STYLE REFERENCE:\n' + pyqContent + '\n' : '') +
-      '\nSections needed:\n' + sectionsDesc + '\n\n' +
-      'RULES:\n' +
-      '- Questions must come from the ' + (hasContent ? 'study material content above' : 'given topics') + '\n' +
-      '- "unit" field = exact unit/topic name from: ' + selectedTopics.join(' | ') + '\n' +
-      '- Cover all units\n' +
-      '\nReturn ONLY JSON array:\n' +
+      (pyqContent ? 'PREVIOUS YEAR PAPER STYLE REFERENCE:\\n' + pyqContent + '\\n' : '') +
+      '\\nSections needed:\\n' + sectionsDesc + '\\n\\n' +
+      'RULES:\\n' +
+      '- Questions must come from the ' + (hasContent ? 'study material content above' : 'given topics') + '\\n' +
+      '- "unit" field = exact unit/topic name from: ' + selectedTopics.join(' | ') + '\\n' +
+      '- Cover all units\\n' +
+      '\\nReturn ONLY JSON array:\\n' +
       '[{"id":1,"section":"A","questionNo":1,"text":"specific question from the material","marks":' +
       (sections?.[0]?.marks || 2) + ',"unit":"' + (selectedTopics[0] || subject) +
       '","difficulty":"easy","type":"short"}]'
@@ -202,7 +209,7 @@ export const generateQuestions = async (req: Request, res: Response) => {
     let questions = []
     try {
       const cleaned = raw.replace(/```json|```/g, '').trim()
-      const match = cleaned.match(/\[[\s\S]*\]/)
+      const match = cleaned.match(/\\[[\\s\\S]*\\]/)
       questions = JSON.parse(match ? match[0] : cleaned)
     } catch {
       return error(res, 'AI format error. Try again.', 500)
@@ -235,7 +242,7 @@ export const aiChat = async (req: Request, res: Response) => {
 
     const userContent = image
       ? (message || 'Analyze and solve this problem') +
-        '\n[Student shared an image about ' + (subject || 'their subject') +
+        '\\n[Student shared an image about ' + (subject || 'their subject') +
         '. Provide detailed step-by-step solution.]'
       : message
 
@@ -278,11 +285,13 @@ export const checkAnswer = async (req: Request, res: Response) => {
     const { question, answer, subject, marks } = req.body
     const raw = await callGroq(
       'Grade this answer. Return ONLY valid JSON.',
-      'Q: ' + question + '\nA: ' + answer + '\nSubject: ' + subject +
-      '\nMax marks: ' + marks +
-      '\nReturn: {"marksAwarded":0,"percentage":0,"grade":"A","feedback":"text"}'
+      'Q: ' + question + '\\nA: ' + answer + '\\nSubject: ' + subject +
+      '\\nMax marks: ' + marks +
+      '\\nReturn: {"marksAwarded":0,"percentage":0,"grade":"A","feedback":"text"}'
     )
-    const match = raw.match(/\{[\s\S]*\}/)
+    const match = raw.match(/\\{[\\s\\S]*\\}/)
     return success(res, JSON.parse(match ? match[0] : raw.replace(/```json|```/g, '').trim()))
   } catch (err: any) { return error(res, err.message, 500) }
 }
+""")
+print("AI controller with PDF scanning done!")
