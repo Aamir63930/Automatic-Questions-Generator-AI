@@ -1,4 +1,6 @@
-import { Request, Response } from 'express'
+# Run from BACKEND folder
+with open("src/controllers/ai.controller.ts", "w", encoding="utf-8") as f:
+    f.write("""import { Request, Response } from 'express'
 import { success, error } from '../utils/response'
 import prisma from '../config/db'
 
@@ -81,29 +83,29 @@ export const generateQuestions = async (req: Request, res: Response) => {
       }
     }
 
-    const topicList = selectedTopics.map((t: string, i: number) => (i + 1) + '. ' + t).join('\n')
+    const topicList = selectedTopics.map((t: string, i: number) => (i + 1) + '. ' + t).join('\\n')
 
     const sectionsDesc = (sections || []).map((s: any) =>
       'Section ' + s.name + ': generate ' + s.total + ' questions worth ' + s.marks + ' marks each'
-    ).join('\n')
+    ).join('\\n')
 
     const sysPrompt = 'You are a university exam paper setter. ' +
       'RULE: ONLY generate questions from these ' + selectedTopics.length + ' topics: ' + selectedTopics.join(', ') + '. ' +
       'Do NOT add any other topic. Return ONLY valid JSON array.'
 
-    const userPrompt = 'Subject: ' + subject + '\n' +
-      'Difficulty: ' + (difficulty || 'mixed') + '\n' +
-      (pyqReference ? pyqReference + '\n' : '') +
-      '\nTOPICS (use ONLY these, nothing else):\n' + topicList +
-      '\n\nSections:\n' + sectionsDesc +
-      '\n\nIMPORTANT:\n' +
-      '- Each question must be about ONE of the above ' + selectedTopics.length + ' topics\n' +
-      '- "unit" field must be exact topic name\n' +
-      '- Cover all ' + selectedTopics.length + ' topics\n' +
-      '- Section A: definitions/short answers FROM the topics\n' +
-      '- Section B: explanations FROM the topics\n' +
-      '- Section C: long answers FROM the topics\n' +
-      '\nReturn ONLY JSON (example):\n' +
+    const userPrompt = 'Subject: ' + subject + '\\n' +
+      'Difficulty: ' + (difficulty || 'mixed') + '\\n' +
+      (pyqReference ? pyqReference + '\\n' : '') +
+      '\\nTOPICS (use ONLY these, nothing else):\\n' + topicList +
+      '\\n\\nSections:\\n' + sectionsDesc +
+      '\\n\\nIMPORTANT:\\n' +
+      '- Each question must be about ONE of the above ' + selectedTopics.length + ' topics\\n' +
+      '- "unit" field must be exact topic name\\n' +
+      '- Cover all ' + selectedTopics.length + ' topics\\n' +
+      '- Section A: definitions/short answers FROM the topics\\n' +
+      '- Section B: explanations FROM the topics\\n' +
+      '- Section C: long answers FROM the topics\\n' +
+      '\\nReturn ONLY JSON (example):\\n' +
       '[{"id":1,"section":"A","questionNo":1,' +
       '"text":"Define ' + (selectedTopics[0] || subject) + ' and its types",' +
       '"marks":' + (sections?.[0]?.marks || 2) + ',' +
@@ -115,7 +117,7 @@ export const generateQuestions = async (req: Request, res: Response) => {
     let questions = []
     try {
       const cleaned = raw.replace(/```json|```/g, '').trim()
-      const match = cleaned.match(/\[[\s\S]*\]/)
+      const match = cleaned.match(/\\[[\\s\\S]*\\]/)
       questions = JSON.parse(match ? match[0] : cleaned)
     } catch {
       return error(res, 'AI format error. Try again.', 500)
@@ -139,7 +141,7 @@ export const aiChat = async (req: Request, res: Response) => {
 
     const userContent = image
       ? (message || 'Analyze and solve this problem') +
-        '\n[Student shared an image about ' + (subject || 'their subject') +
+        '\\n[Student shared an image about ' + (subject || 'their subject') +
         '. Provide detailed step-by-step solution.]'
       : message
 
@@ -185,11 +187,13 @@ export const checkAnswer = async (req: Request, res: Response) => {
     const { question, answer, subject, marks } = req.body
     const raw = await callGroq(
       'Grade this answer. Return ONLY valid JSON.',
-      'Q: ' + question + '\nA: ' + answer + '\nSubject: ' + subject +
-      '\nMax marks: ' + marks +
-      '\nReturn: {"marksAwarded":0,"percentage":0,"grade":"A","feedback":"text"}'
+      'Q: ' + question + '\\nA: ' + answer + '\\nSubject: ' + subject +
+      '\\nMax marks: ' + marks +
+      '\\nReturn: {"marksAwarded":0,"percentage":0,"grade":"A","feedback":"text"}'
     )
-    const match = raw.match(/\{[\s\S]*\}/)
+    const match = raw.match(/\\{[\\s\\S]*\\}/)
     return success(res, JSON.parse(match ? match[0] : raw.replace(/```json|```/g, '').trim()))
   } catch (err: any) { return error(res, err.message, 500) }
 }
+""")
+print("AI controller done!")
