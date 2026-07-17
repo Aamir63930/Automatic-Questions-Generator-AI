@@ -13,11 +13,16 @@ async function getCollegeId(): Promise<string> {
 }
 
 async function uploadToCloudinary(filePath: string, fileName: string): Promise<string> {
+  const ext = require('path').extname(fileName).toLowerCase()
+  // PDFs and docs must be uploaded as 'raw', images as 'image'
+  const imageExts = ['.jpg','.jpeg','.png','.gif','.webp']
+  const resourceType = imageExts.includes(ext) ? 'image' : 'raw'
+  
   const result = await cloudinary.uploader.upload(filePath, {
     folder: 'aiqpg/materials',
-    resource_type: 'auto',
-    public_id: Date.now() + '_' + fileName.replace(/[^a-zA-Z0-9]/g, '_'),
-    use_filename: true,
+    resource_type: resourceType,
+    public_id: Date.now() + '_' + fileName.replace(/[^a-zA-Z0-9._-]/g, '_'),
+    use_filename: false,
   })
   return result.secure_url
 }
@@ -120,9 +125,17 @@ export const downloadMaterial = async (req: Request, res: Response) => {
     const material = await prisma.material.findUnique({ where: { id: req.params.id as string } })
     if (!material) return error(res, 'Not found', 404)
 
-    // Cloudinary URL - redirect directly
+    // Cloudinary URL - redirect
     if (material.fileUrl.startsWith('http')) {
-      return res.redirect(material.fileUrl)
+      let downloadUrl = material.fileUrl
+      if (downloadUrl.includes('cloudinary.com') && downloadUrl.includes('/image/upload/')) {
+        const ext = require('path').extname(material.fileName).toLowerCase()
+        const imageExts = ['.jpg','.jpeg','.png','.gif','.webp']
+        if (!imageExts.includes(ext)) {
+          downloadUrl = downloadUrl.replace('/image/upload/', '/raw/upload/')
+        }
+      }
+      return res.redirect(downloadUrl)
     }
 
     // Local file fallback
@@ -139,10 +152,19 @@ export const previewMaterial = async (req: Request, res: Response) => {
     const material = await prisma.material.findUnique({ where: { id: req.params.id as string } })
     if (!material) return error(res, 'Not found', 404)
 
-    // Cloudinary URL - redirect directly (opens in browser)
+    // Cloudinary URL - fix raw URL for PDF
     if (material.fileUrl.startsWith('http')) {
+      let viewUrl = material.fileUrl
+      // Fix: PDF/doc files need /raw/upload/ not /image/upload/
+      if (viewUrl.includes('cloudinary.com') && viewUrl.includes('/image/upload/')) {
+        const ext = require('path').extname(material.fileName).toLowerCase()
+        const imageExts = ['.jpg','.jpeg','.png','.gif','.webp']
+        if (!imageExts.includes(ext)) {
+          viewUrl = viewUrl.replace('/image/upload/', '/raw/upload/')
+        }
+      }
       res.setHeader('Access-Control-Allow-Origin', '*')
-      return res.redirect(material.fileUrl)
+      return res.redirect(viewUrl)
     }
 
     // Local file fallback

@@ -31,19 +31,32 @@ async function extractPdfText(url: string): Promise<string> {
   try {
     const pdfParse = require('pdf-parse')
     const mammoth = require('mammoth')
+    const cloudinary = require('../config/cloudinary').default
     
     if (url.startsWith('http')) {
-      // Download from Cloudinary
-      const response = await axios.get(url, { 
+      // Fix Cloudinary URL - change image/upload to raw/upload for PDFs
+      let downloadUrl = url
+      if (url.includes('cloudinary.com') && url.includes('/image/upload/')) {
+        const urlLower = url.toLowerCase()
+        if (urlLower.includes('.pdf') || urlLower.includes('.doc') || 
+            urlLower.includes('.ppt') || urlLower.includes('.txt')) {
+          downloadUrl = url.replace('/image/upload/', '/raw/upload/')
+          console.log('Fixed Cloudinary URL:', downloadUrl)
+        }
+      }
+      
+      const response = await axios.get(downloadUrl, { 
         responseType: 'arraybuffer',
-        timeout: 15000,
-        headers: { 'User-Agent': 'Mozilla/5.0' }
+        timeout: 20000,
+        headers: { 
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': '*/*'
+        }
       })
       const buffer = Buffer.from(response.data)
       
-      // Check if docx or pdf
       const urlLower = url.toLowerCase()
-      if (urlLower.includes('.docx') || urlLower.includes('docx') || urlLower.includes('officedocument')) {
+      if (urlLower.includes('.docx') || urlLower.includes('docx')) {
         const result = await mammoth.extractRawText({ buffer })
         return result.value?.slice(0, 4000) || ''
       } else {
