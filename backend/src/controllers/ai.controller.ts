@@ -30,6 +30,7 @@ async function callGroq(system: string, user: string, maxTokens = 3500): Promise
 async function extractPdfText(url: string): Promise<string> {
   try {
     const pdfParse = require('pdf-parse')
+    const mammoth = require('mammoth')
     
     if (url.startsWith('http')) {
       // Download from Cloudinary
@@ -39,8 +40,16 @@ async function extractPdfText(url: string): Promise<string> {
         headers: { 'User-Agent': 'Mozilla/5.0' }
       })
       const buffer = Buffer.from(response.data)
-      const data = await pdfParse(buffer)
-      return data.text?.slice(0, 4000) || '' // Limit text size
+      
+      // Check if docx or pdf
+      const urlLower = url.toLowerCase()
+      if (urlLower.includes('.docx') || urlLower.includes('docx') || urlLower.includes('officedocument')) {
+        const result = await mammoth.extractRawText({ buffer })
+        return result.value?.slice(0, 4000) || ''
+      } else {
+        const data = await pdfParse(buffer)
+        return data.text?.slice(0, 4000) || ''
+      } // Limit text size
     } else {
       // Local file
       const filePath = path.join(process.cwd(), url)
@@ -176,8 +185,8 @@ export const generateQuestions = async (req: Request, res: Response) => {
     const hasContent = materialContent.trim().length > 0
 
     const sysPrompt = hasContent
-      ? 'You are an expert exam paper setter. Generate questions STRICTLY from the provided study material content. Every question must be based on the actual content given below.'
-      : 'You are a university exam paper setter. Generate questions ONLY from these topics: ' + selectedTopics.join(', ') + '. No other topics allowed.'
+      ? 'You are an exam paper setter. The study material content is given below. You MUST generate questions ONLY from this exact content. Do NOT use any outside knowledge. Every question answer must be found in the provided content. Return ONLY JSON array.'
+      : 'You are a university exam paper setter. Generate questions ONLY from these topics: ' + selectedTopics.join(', ') + '. Return ONLY JSON array.'
 
     const userPrompt = 'Create exam questions for: ' + subject + '\n' +
       'Topics/Units: ' + topicList + '\n' +
