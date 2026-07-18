@@ -34,25 +34,32 @@ async function extractPdfText(url: string): Promise<string> {
     const cloudinary = require('../config/cloudinary').default
     
     if (url.startsWith('http')) {
-      // Fix Cloudinary URL - change image/upload to raw/upload for PDFs
+      // Try raw URL first, then image URL
       let downloadUrl = url
-      if (url.includes('cloudinary.com') && url.includes('/image/upload/')) {
-        const urlLower = url.toLowerCase()
-        if (urlLower.includes('.pdf') || urlLower.includes('.doc') || 
-            urlLower.includes('.ppt') || urlLower.includes('.txt')) {
-          downloadUrl = url.replace('/image/upload/', '/raw/upload/')
-          console.log('Fixed Cloudinary URL:', downloadUrl)
-        }
+      if (url.includes('cloudinary.com')) {
+        // Always try raw/upload for non-image files
+        downloadUrl = url.includes('/image/upload/') 
+          ? url.replace('/image/upload/', '/raw/upload/')
+          : url
+        console.log('Trying URL:', downloadUrl)
       }
       
-      const response = await axios.get(downloadUrl, { 
-        responseType: 'arraybuffer',
-        timeout: 20000,
-        headers: { 
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': '*/*'
-        }
-      })
+      let response: any
+      try {
+        response = await axios.get(downloadUrl, { 
+          responseType: 'arraybuffer',
+          timeout: 20000,
+          headers: { 'Accept': '*/*' }
+        })
+      } catch (err1: any) {
+        // Fallback: try original URL
+        console.log('Raw URL failed, trying original:', url)
+        response = await axios.get(url, { 
+          responseType: 'arraybuffer',
+          timeout: 20000,
+          headers: { 'Accept': '*/*' }
+        })
+      }
       const buffer = Buffer.from(response.data)
       
       const urlLower = url.toLowerCase()
