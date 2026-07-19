@@ -31,34 +31,35 @@ async function extractPdfText(url: string): Promise<string> {
   try {
     const pdfParse = require('pdf-parse')
     const mammoth = require('mammoth')
-    const cloudinary = require('../config/cloudinary').default
+    const cloudinaryV2 = require('cloudinary').v2
+    cloudinaryV2.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    })
     
     if (url.startsWith('http')) {
-      // Try raw URL first, then image URL
+      // Use URL directly - already fixed to /raw/upload/ in DB
       let downloadUrl = url
-      if (url.includes('cloudinary.com')) {
-        // Always try raw/upload for non-image files
-        downloadUrl = url.includes('/image/upload/') 
-          ? url.replace('/image/upload/', '/raw/upload/')
-          : url
-        console.log('Trying URL:', downloadUrl)
+      // Safety: fix image/upload to raw/upload if somehow old URL
+      if (url.includes('cloudinary.com') && url.includes('/image/upload/')) {
+        downloadUrl = url.replace('/image/upload/', '/raw/upload/')
       }
+      console.log('Extracting from:', downloadUrl)
       
+      // Direct download - URL is now /raw/upload/ which is publicly accessible
+      console.log('Downloading from:', downloadUrl)
       let response: any
       try {
         response = await axios.get(downloadUrl, { 
           responseType: 'arraybuffer',
-          timeout: 20000,
+          timeout: 25000,
           headers: { 'Accept': '*/*' }
         })
+        console.log('Download success! Size:', response.data.byteLength, 'bytes')
       } catch (err1: any) {
-        // Fallback: try original URL
-        console.log('Raw URL failed, trying original:', url)
-        response = await axios.get(url, { 
-          responseType: 'arraybuffer',
-          timeout: 20000,
-          headers: { 'Accept': '*/*' }
-        })
+        console.log('Download failed:', err1.message, 'Status:', err1.response?.status)
+        return ''
       }
       const buffer = Buffer.from(response.data)
       
