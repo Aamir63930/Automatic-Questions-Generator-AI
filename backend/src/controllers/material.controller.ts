@@ -21,8 +21,10 @@ async function uploadToCloudinary(filePath: string, fileName: string): Promise<s
   const result = await cloudinary.uploader.upload(filePath, {
     folder: 'aiqpg/materials',
     resource_type: resourceType,
+    type: 'upload',  // public access
     public_id: Date.now() + '_' + fileName.replace(/[^a-zA-Z0-9._-]/g, '_'),
     use_filename: false,
+    access_mode: 'public',  // ensure public access
   })
   return result.secure_url
 }
