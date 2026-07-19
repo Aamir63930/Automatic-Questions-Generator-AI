@@ -31,61 +31,97 @@ async function extractPdfText(url: string): Promise<string> {
   try {
     const pdfParse = require('pdf-parse')
     const mammoth = require('mammoth')
-    const cloudinaryV2 = require('cloudinary').v2
-    cloudinaryV2.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    })
-    
-    if (url.startsWith('http')) {
-      // Use URL directly - already fixed to /raw/upload/ in DB
-      let downloadUrl = url
-      // Safety: fix image/upload to raw/upload if somehow old URL
-      if (url.includes('cloudinary.com') && url.includes('/image/upload/')) {
-        downloadUrl = url.replace('/image/upload/', '/raw/upload/')
-      }
-      console.log('Extracting from:', downloadUrl)
-      
-      // Direct download - URL is now /raw/upload/ which is publicly accessible
-      console.log('Downloading from:', downloadUrl)
-      let response: any
-      try {
-        response = await axios.get(downloadUrl, { 
-          responseType: 'arraybuffer',
-          timeout: 25000,
-          headers: { 'Accept': '*/*' }
+    const https = require('https')
+    const http = require('http')
+
+    let buffer: Buffer
+
+    if (url.includes('cloudinary.com')) {
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME || ''
+      const apiKey = process.env.CLOUDINARY_API_KEY || ''
+      const apiSecret = process.env.CLOUDINARY_API_SECRET || ''
+      const crypto = require('crypto')
+
+      // Extract public_id
+      let publicId = ''
+      const rawMatch = url.split('/raw/upload/').pop() || ''
+      const imgMatch = url.split('/image/upload/').pop() || ''
+      const raw = rawMatch || imgMatch
+      // Remove version prefix v1234567/
+      publicId = raw.replace(/^v[0-9]+\//, '')
+      console.log('Public ID:', publicId)
+
+      // Generate signed download URL
+      const timestamp = Math.floor(Date.now() / 1000)
+      const str = 'public_id=' + publicId + '&timestamp=' + timestamp + apiSecret
+      const sig = crypto.createHash('sha256').update(str).digest('hex')
+
+      const downloadUrl = 'https://api.cloudinary.com/v1_1/' + cloudName +
+        '/raw/download?public_id=' + encodeURIComponent(publicId) +
+        '&api_key=' + apiKey + '&timestamp=' + timestamp + '&signature=' + sig
+
+      console.log('Auth URL base:', downloadUrl.split('?')[0])
+
+      buffer = await new Promise((resolve, reject) => {
+        const chunks: Buffer[] = []
+        https.get(downloadUrl, (res: any) => {
+          console.log('Status:', res.statusCode)
+          if (res.statusCode !== 200) {
+            let body = ''
+            res.on('data', (d: any) => body += d)
+            res.on('end', () => {
+              console.log('Error body:', body.slice(0, 200))
+              reject(new Error('HTTP ' + res.statusCode))
+            })
+            return
+          }
+          res.on('data', (c: Buffer) => chunks.push(c))
+          res.on('end', () => resolve(Buffer.concat(chunks)))
+        }).on('error', (e: any) => {
+          console.log('Request error:', e.message)
+          reject(e)
+        }).setTimeout(20000, function(this: any) {
+          this.destroy()
+          reject(new Error('Timeout'))
         })
-        console.log('Download success! Size:', response.data.byteLength, 'bytes')
-      } catch (err1: any) {
-        console.log('Download failed:', err1.message, 'Status:', err1.response?.status)
-        return ''
-      }
-      const buffer = Buffer.from(response.data)
-      
-      const urlLower = url.toLowerCase()
-      if (urlLower.includes('.docx') || urlLower.includes('docx')) {
-        const result = await mammoth.extractRawText({ buffer })
-        return result.value?.slice(0, 4000) || ''
-      } else {
-        const data = await pdfParse(buffer)
-        return data.text?.slice(0, 4000) || ''
-      } // Limit text size
+      })
+
+    } else if (url.startsWith('http')) {
+      buffer = await new Promise((resolve, reject) => {
+        const proto = url.startsWith('https') ? https : http
+        const chunks: Buffer[] = []
+        proto.get(url, (res: any) => {
+          res.on('data', (c: Buffer) => chunks.push(c))
+          res.on('end', () => resolve(Buffer.concat(chunks)))
+        }).on('error', reject)
+      })
     } else {
-      // Local file
-      const filePath = path.join(process.cwd(), url)
-      if (fs.existsSync(filePath)) {
-        const buffer = fs.readFileSync(filePath)
-        const data = await pdfParse(buffer)
-        return data.text?.slice(0, 4000) || ''
-      }
+      const fs = require('fs')
+      const path = require('path')
+      const fp = path.join(process.cwd(), url)
+      if (!require('fs').existsSync(fp)) return ''
+      buffer = require('fs').readFileSync(fp)
     }
-    return ''
-  } catch (e) {
-    console.log('PDF extract failed:', e)
+
+    console.log('Buffer size:', buffer.length)
+    if (buffer.length === 0) return ''
+
+    if (url.toLowerCase().includes('.docx')) {
+      const r = await mammoth.extractRawText({ buffer })
+      console.log('DOCX text length:', r.value?.length || 0)
+      return (r.value || '').slice(0, 4000)
+    } else {
+      const d = await pdfParse(buffer)
+      console.log('PDF text length:', d.text?.length || 0)
+      return (d.text || '').slice(0, 4000)
+    }
+
+  } catch (e: any) {
+    console.log('Extract error:', e.message)
     return ''
   }
 }
+
 
 export const getMaterialUnits = async (req: Request, res: Response) => {
   try {
