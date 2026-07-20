@@ -29,80 +29,71 @@ async function callGroq(system: string, user: string, maxTokens = 3500): Promise
 // Extract text from PDF URL
 async function extractPdfText(url: string): Promise<string> {
   try {
+    if (!url) return ''
+    console.log('Extracting from:', url.slice(0, 80))
+
     const pdfParse = require('pdf-parse')
     const mammoth = require('mammoth')
-    const https = require('https')
-    const http = require('http')
 
-    if (!url || url.length === 0) return ''
-    console.log('Extracting from URL:', url)
-
-    let buffer: Buffer
+    let buffer: Buffer | null = null
 
     if (url.startsWith('http')) {
-      // Direct download - works for public Cloudinary files
-      buffer = await new Promise((resolve, reject) => {
-        const proto = url.startsWith('https') ? https : http
-        const chunks: Buffer[] = []
-        let redirectCount = 0
+      // For Cloudinary - try multiple approaches
+      const urlsToTry: string[] = [url]
 
-        const doRequest = (reqUrl: string) => {
-          proto.get(reqUrl, { timeout: 20000 }, (res: any) => {
-            console.log('HTTP status:', res.statusCode, 'for:', reqUrl)
+      // If raw/upload URL - also try image/upload as fallback
+      if (url.includes('/raw/upload/')) {
+        urlsToTry.push(url.replace('/raw/upload/', '/image/upload/'))
+      }
+      // If image/upload - also try raw/upload
+      if (url.includes('/image/upload/')) {
+        urlsToTry.push(url.replace('/image/upload/', '/raw/upload/'))
+      }
 
-            // Handle redirect
-            if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location && redirectCount < 3) {
-              redirectCount++
-              doRequest(res.headers.location)
-              return
-            }
-
-            if (res.statusCode !== 200) {
-              res.resume()
-              resolve(Buffer.alloc(0))
-              return
-            }
-
-            res.on('data', (c: Buffer) => chunks.push(c))
-            res.on('end', () => resolve(Buffer.concat(chunks)))
-          }).on('error', (e: any) => {
-            console.log('Request error:', e.message)
-            resolve(Buffer.alloc(0))
+      for (const tryUrl of urlsToTry) {
+        try {
+          const response = await fetch(tryUrl, {
+            headers: { 'Accept': '*/*' },
+            signal: AbortSignal.timeout(15000)
           })
-        }
+          console.log('Fetch status:', response.status, 'URL:', tryUrl.slice(0, 60))
 
-        doRequest(url)
-      })
+          if (response.ok) {
+            const arrayBuf = await response.arrayBuffer()
+            buffer = Buffer.from(arrayBuf)
+            console.log('Downloaded:', buffer.length, 'bytes')
+            if (buffer.length > 100) break
+          }
+        } catch (fetchErr: any) {
+          console.log('Fetch attempt failed:', fetchErr.message)
+        }
+      }
     } else {
+      // Local file
       const fs = require('fs')
       const path = require('path')
       const fp = path.join(process.cwd(), url)
-      if (!require('fs').existsSync(fp)) return ''
-      buffer = require('fs').readFileSync(fp)
+      if (fs.existsSync(fp)) {
+        buffer = fs.readFileSync(fp)
+      }
     }
 
-    console.log('Buffer size:', buffer.length)
-    if (buffer.length < 100) {
-      console.log('File too small or empty - skipping extraction')
+    if (!buffer || buffer.length < 100) {
+      console.log('Could not download file or file too small')
       return ''
     }
 
     const urlLower = url.toLowerCase()
-    try {
-      if (urlLower.includes('.docx')) {
-        const r = await mammoth.extractRawText({ buffer })
-        const text = (r.value || '').trim()
-        console.log('DOCX extracted:', text.length, 'chars')
-        return text.slice(0, 4000)
-      } else {
-        const d = await pdfParse(buffer)
-        const text = (d.text || '').trim()
-        console.log('PDF extracted:', text.length, 'chars')
-        return text.slice(0, 4000)
-      }
-    } catch (parseErr: any) {
-      console.log('Parse error:', parseErr.message)
-      return ''
+    if (urlLower.includes('.docx')) {
+      const r = await mammoth.extractRawText({ buffer })
+      const text = (r.value || '').trim()
+      console.log('DOCX text extracted:', text.length, 'chars')
+      return text.slice(0, 4000)
+    } else {
+      const d = await pdfParse(buffer)
+      const text = (d.text || '').trim()
+      console.log('PDF text extracted:', text.length, 'chars')
+      return text.slice(0, 4000)
     }
 
   } catch (e: any) {
