@@ -14,18 +14,25 @@ async function getCollegeId(): Promise<string> {
 
 async function uploadToCloudinary(filePath: string, fileName: string): Promise<string> {
   const ext = require('path').extname(fileName).toLowerCase()
-  // PDFs and docs must be uploaded as 'raw', images as 'image'
   const imageExts = ['.jpg','.jpeg','.png','.gif','.webp']
   const resourceType = imageExts.includes(ext) ? 'image' : 'raw'
   
   const result = await cloudinary.uploader.upload(filePath, {
     folder: 'aiqpg/materials',
     resource_type: resourceType,
-    type: 'upload',  // public access
+    type: 'upload',
+    access_mode: 'public',
     public_id: Date.now() + '_' + fileName.replace(/[^a-zA-Z0-9._-]/g, '_'),
-    use_filename: false,
-    access_mode: 'public',  // ensure public access
+    invalidate: true,
   })
+  
+  console.log('Cloudinary upload result:', {
+    url: result.secure_url,
+    resource_type: result.resource_type,
+    type: result.type,
+    access_mode: result.access_mode
+  })
+  
   return result.secure_url
 }
 
