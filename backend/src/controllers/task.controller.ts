@@ -24,7 +24,27 @@ export const createTask = async (req: Request, res: Response) => {
         maxMarks: parseInt(maxMarks) || 10,
         instructions: instructions || null,
         allowLate: allowLate === 'true' || allowLate === true,
-        attachmentUrl: req.file ? '/uploads/' + collegeId + '/' + req.file.filename : null,
+        attachmentUrl: await (async () => {
+          if (!req.file) return null
+          try {
+            const cloudinary = require('../config/cloudinary').default
+            const ext = require('path').extname(req.file.originalname).toLowerCase()
+            const imageExts = ['.jpg','.jpeg','.png','.gif','.webp']
+            const resourceType = imageExts.includes(ext) ? 'image' : 'raw'
+            const result = await cloudinary.uploader.upload(req.file.path, {
+              folder: 'aiqpg/tasks',
+              resource_type: resourceType,
+              type: 'upload',
+              access_mode: 'public',
+            })
+            const fs = require('fs')
+            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
+            return result.secure_url
+          } catch(e) {
+            console.error('Task attachment upload error:', e)
+            return '/uploads/' + collegeId + '/' + req.file.filename
+          }
+        })(),
       },
       include: {
         creator: { select: { name: true } },

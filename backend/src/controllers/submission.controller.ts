@@ -30,7 +30,27 @@ export const createSubmission = async (req: Request, res: Response) => {
       data: {
         taskId: tid, studentId: userId,
         textAnswer: textAnswer || null,
-        fileUrl: file ? '/uploads/' + collegeId + '/' + file.filename : null,
+        fileUrl: await (async () => {
+          if (!file) return null
+          try {
+            const cloudinary = require('../config/cloudinary').default
+            const ext = require('path').extname(file.originalname).toLowerCase()
+            const imageExts = ['.jpg','.jpeg','.png','.gif','.webp']
+            const resourceType = imageExts.includes(ext) ? 'image' : 'raw'
+            const result = await cloudinary.uploader.upload(file.path, {
+              folder: 'aiqpg/submissions',
+              resource_type: resourceType,
+              type: 'upload',
+              access_mode: 'public',
+            })
+            const fs = require('fs')
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path)
+            return result.secure_url
+          } catch(e) {
+            console.error('Submission upload error:', e)
+            return '/uploads/' + collegeId + '/' + file.filename
+          }
+        })(),
         fileName: file?.originalname || null,
         status: (isLate ? 'late' : 'submitted') as any,
       },
