@@ -32,7 +32,7 @@ async function extractPdfText(url: string): Promise<string> {
     if (!url) return ''
     console.log('Extracting from:', url.slice(0, 80))
 
-    const pdfParse = require('pdf-parse')
+    const pdfParse = require('pdf-parse').default || require('pdf-parse')
     const mammoth = require('mammoth')
 
     let buffer: Buffer | null = null
