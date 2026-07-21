@@ -11,16 +11,26 @@ const MODEL = 'llama-3.1-8b-instant'
 
 async function callGroq(system: string, user: string, maxTokens = 3500): Promise<string> {
   if (!GROQ_KEY) throw new Error('GROQ_API_KEY not set')
-  const res = await fetch(GROQ_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_tokens: maxTokens,
-      temperature: 0.7,
+  // Retry logic for rate limits
+  let res: any
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(GROQ_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+        max_tokens: maxTokens,
+        temperature: 0.7,
+      })
     })
-  })
+    if (res.status === 429) {
+      console.log('Rate limited, waiting 10s... attempt', attempt + 1)
+      await new Promise(r => setTimeout(r, 10000))
+      continue
+    }
+    break
+  }
   if (!res.ok) throw new Error('Groq error: ' + res.status)
   const d = await res.json() as { choices: { message: { content: string } }[] }
   return d.choices?.[0]?.message?.content || ''
@@ -32,7 +42,7 @@ async function extractPdfText(url: string): Promise<string> {
     if (!url) return ''
     console.log('Extracting from:', url.slice(0, 80))
 
-    const pdfParse = require('pdf-parse').default || require('pdf-parse')
+    let pdfParse: any; try { pdfParse = require('pdf-parse'); if (pdfParse.default) pdfParse = pdfParse.default; } catch(e) { pdfParse = null; }
     const mammoth = require('mammoth')
 
     let buffer: Buffer | null = null
@@ -90,6 +100,7 @@ async function extractPdfText(url: string): Promise<string> {
       console.log('DOCX text extracted:', text.length, 'chars')
       return text.slice(0, 4000)
     } else {
+      if (!pdfParse) { console.log('pdf-parse not available'); return '' }
       const d = await pdfParse(buffer)
       const text = (d.text || '').trim()
       console.log('PDF text extracted:', text.length, 'chars')
