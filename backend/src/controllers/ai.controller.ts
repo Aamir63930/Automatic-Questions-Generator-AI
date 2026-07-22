@@ -42,68 +42,60 @@ async function extractPdfText(url: string): Promise<string> {
     if (!url) return ''
     console.log('Extracting from:', url.slice(0, 80))
 
-    let pdfParse: any; try { pdfParse = require('pdf-parse'); if (pdfParse.default) pdfParse = pdfParse.default; } catch(e) { pdfParse = null; }
-    const mammoth = require('mammoth')
+    // Import pdf-parse correctly
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pdfParseModule = require('pdf-parse')
+    const pdfParse = typeof pdfParseModule === 'function'
+      ? pdfParseModule
+      : (pdfParseModule.default || pdfParseModule)
+
+    if (typeof pdfParse !== 'function') {
+      console.log('pdf-parse not loaded correctly, type:', typeof pdfParse)
+      return ''
+    }
 
     let buffer: Buffer | null = null
 
     if (url.startsWith('http')) {
-      // For Cloudinary - try multiple approaches
-      const urlsToTry: string[] = [url]
-
-      // If raw/upload URL - also try image/upload as fallback
-      if (url.includes('/raw/upload/')) {
-        urlsToTry.push(url.replace('/raw/upload/', '/image/upload/'))
-      }
-      // If image/upload - also try raw/upload
-      if (url.includes('/image/upload/')) {
-        urlsToTry.push(url.replace('/image/upload/', '/raw/upload/'))
-      }
-
-      for (const tryUrl of urlsToTry) {
-        try {
-          const response = await fetch(tryUrl, {
-            headers: { 'Accept': '*/*' },
-            signal: AbortSignal.timeout(15000)
-          })
-          console.log('Fetch status:', response.status, 'URL:', tryUrl.slice(0, 60))
-
-          if (response.ok) {
-            const arrayBuf = await response.arrayBuffer()
-            buffer = Buffer.from(arrayBuf)
-            console.log('Downloaded:', buffer.length, 'bytes')
-            if (buffer.length > 100) break
-          }
-        } catch (fetchErr: any) {
-          console.log('Fetch attempt failed:', fetchErr.message)
+      try {
+        const response = await fetch(url, {
+          headers: { 'Accept': '*/*' },
+          signal: AbortSignal.timeout(20000)
+        })
+        console.log('Fetch status:', response.status)
+        if (response.ok) {
+          const ab = await response.arrayBuffer()
+          buffer = Buffer.from(ab)
+          console.log('Downloaded:', buffer.length, 'bytes')
         }
+      } catch (fe: any) {
+        console.log('Fetch error:', fe.message)
       }
     } else {
-      // Local file
-      const fs = require('fs')
-      const path = require('path')
+      const fs = require('fs'), path = require('path')
       const fp = path.join(process.cwd(), url)
-      if (fs.existsSync(fp)) {
-        buffer = fs.readFileSync(fp)
-      }
+      if (fs.existsSync(fp)) buffer = fs.readFileSync(fp)
     }
 
     if (!buffer || buffer.length < 100) {
-      console.log('Could not download file or file too small')
+      console.log('No buffer or too small:', buffer?.length)
       return ''
     }
 
     const urlLower = url.toLowerCase()
     if (urlLower.includes('.docx')) {
+      const mammoth = require('mammoth')
       const r = await mammoth.extractRawText({ buffer })
       const text = (r.value || '').trim()
-      console.log('DOCX text extracted:', text.length, 'chars')
+      console.log('DOCX text:', text.length, 'chars')
       return text.slice(0, 4000)
     } else {
-      if (!pdfParse) { console.log('pdf-parse not available'); return '' }
-      const d = await pdfParse(buffer)
-      const text = (d.text || '').trim()
-      console.log('PDF text extracted:', text.length, 'chars')
+      // PDF parse with options to avoid issues
+      const data = await pdfParse(buffer, {
+        max: 0,  // parse all pages
+      })
+      const text = (data.text || '').trim()
+      console.log('PDF text:', text.length, 'chars - SAMPLE:', text.slice(0, 100))
       return text.slice(0, 4000)
     }
 
